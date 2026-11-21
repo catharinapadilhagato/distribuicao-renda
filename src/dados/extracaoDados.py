@@ -13,7 +13,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from src.util.funcaoLog import configurar_log
 
-# ---------------------------------------------------------------- logging
+#------------ LOGS ------------ 
 
 PASTA_LOGS = Path(__file__).parent / "logs"
 PASTA_LOGS.mkdir(parents=True, exist_ok=True)
@@ -23,7 +23,7 @@ logger = configurar_log('extracao',
                         PASTA_LOGS,
                         'extracao.log')
 
-# ------------------------------------------------------------- configuração
+#------------ CONFIGURAÇÕES ------------ 
 URL = "https://dados.gov.br/dados/conjuntos-dados/distribuio-de-renda"
 
 TITULO_RECURSO = "Distribuição da renda tributável, dos sócios, dividendos e tributada exclusivamente na fonte"
