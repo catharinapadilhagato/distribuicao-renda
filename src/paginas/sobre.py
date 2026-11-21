@@ -109,7 +109,7 @@ def renderizar_analise_dataset(data:pd.DataFrame, prefixo: str):
     st.divider()
     st.subheader("Exibição do conjunto de dados")
 
-    c_esq, c_dir = st.columns(2)
+    c_esq, c_dir = st.columns([1, 3])
 
     with c_esq:
         n = st.number_input(
@@ -132,8 +132,7 @@ def renderizar_analise_dataset(data:pd.DataFrame, prefixo: str):
     with c_dir:
         st.dataframe(
             n_valores(data, n=n, primeiros=opcao_bool),
-            width='stretch',
-            height=400
+            width="stretch"
                      )
 
 
@@ -144,4 +143,12 @@ with aba1:
     renderizar_analise_dataset(dfO, prefixo='dfO')
 
 with aba2:
+    st.markdown('''
+Para melhor compreensão e facilidade nas analises que serão realizadas, algumas colunas foram compactadas, sendo elas:
+- Rendimentos Tributáveis Totais [R$ milhões]
+- Rendimentos Isentos Totais [R$ milhões]
+- Despesas Dedutíveis Totais [R$ milhões]
+- Bens e Direitos Totais [R$ milhões]
+    ''')
+    st.divider()
     renderizar_analise_dataset(dfT, prefixo='dfT')
