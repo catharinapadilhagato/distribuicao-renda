@@ -123,6 +123,9 @@ def converter_tipos(df, colunas_ignoradas=COLUNAS_IGNORADAS):
 
 dfO = converter_tipos(dfO)
 
+logger.info('Dataset original com os tipos de dados alterados')
+logger.info(dfO.head())
+
 #------------ DATASET COMPACTADO ------------
 
 grupos_compactados = {
@@ -157,3 +160,16 @@ dfT = dfO[colunas_unicas].copy()
 
 for nome_coluna, colunas in grupos_compactados.items():
     dfT[nome_coluna] = dfO[colunas].sum(axis=1)
+
+logger.info('Dataset compactado/transformado')
+logger.info(dfT.head())
+
+#------------ DATASET AGRAGADO ------------
+#Por causa do grande volume de dados distribuidos entre os centis, esse dataset agrupa o ano e ente federativo dos itens
+
+dfAgregado = (
+    dfT.groupby(['Ano-calendário', 'Ente Federativo'], as_index=False)
+       .sum(numeric_only=True)
+)
+logger.info('data set agregado criado')
+logger.info(dfAgregado.head())
