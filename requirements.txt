@@ -1,0 +1,10 @@
+requests
+selenium
+
+pandas
+numpy
+
+streamlit
+
+seaborn
+matplotlib
