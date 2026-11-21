@@ -2,22 +2,38 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.dados.extracaoDados import main
 from src.util.funcaoLog import configurar_log
 
-#------------ LOGS ------------ 
+#------------ LOGS ------------
 
 PASTA_LOGS = Path(__file__).parent / "logs"
 PASTA_LOGS.mkdir(parents=True, exist_ok=True)
-
 
 logger = configurar_log('limpeza',
                         PASTA_LOGS,
                         'limpeza.log')
 
-#------------ TRADUÇÃO ------------ 
+#------------ CARREGAMENTO ------------
 
-dfO = main()
+CAMINHO_DADOS = Path(__file__).resolve().parents[2] / "data" / "distribuicao_renda.csv"
+
+
+def carregar_dados():
+    if not CAMINHO_DADOS.exists():
+        logger.error(f"Arquivo não encontrado: {CAMINHO_DADOS}")
+        raise FileNotFoundError(
+            f"{CAMINHO_DADOS} não existe. Rode 'python -m src.dados.extracaoDados' "
+            "localmente para gerar o arquivo."
+        )
+
+    df = pd.read_csv(CAMINHO_DADOS, sep=";", encoding="utf-8-sig")
+    logger.info(f"Dados lidos de {CAMINHO_DADOS}: {df.shape[0]} linhas, {df.shape[1]} colunas")
+    return df
+
+
+dfO = carregar_dados()
+
+#------------ TRADUÇÃO ------------
 
 nome_colunas = [
     "Ano-calendário",
@@ -56,14 +72,16 @@ colunas_unicas = [
     "Dívidas e Ônus [R$ milhões]",
 ]
 
-assert len(dfO.columns) == len(nome_colunas), logger.error(f'"{len(dfO.columns)} colunas no DataFrame, {len(nome_colunas)} nomes na lista"')
+if len(dfO.columns) != len(nome_colunas):
+    logger.error(f"{len(dfO.columns)} colunas no DataFrame, {len(nome_colunas)} nomes na lista")
+    raise ValueError("Quantidade de colunas diferente do esperado")
 
 for antigo, novo in zip(dfO.columns, nome_colunas):
     logger.info(f"coluna '{antigo}' alterada para '{novo}'")
 
 dfO.columns = nome_colunas
 
-#------------ MUDANÇA DE TIPO ------------ 
+#------------ MUDANÇA DE TIPO ------------
 
 COLUNAS_IGNORADAS = [
     "Ano-calendário",
@@ -72,11 +90,22 @@ COLUNAS_IGNORADAS = [
     "Quantidade de Contribuintes",
 ]
 
-def converter_tipos(df, colunas_ignoradas=COLUNAS_IGNORADAS):
-    '''
-    Converte o tipo das colunas para decimal
-    '''
 
+def _para_float(serie):
+    if pd.api.types.is_numeric_dtype(serie):
+        return serie.astype(float)
+
+    serie = (
+        serie.astype(str)
+        .str.strip()
+        .str.replace(".", "", regex=False)
+        .str.replace(",", ".", regex=False)
+    )
+    return pd.to_numeric(serie, errors="coerce")
+
+
+def converter_tipos(df, colunas_ignoradas=COLUNAS_IGNORADAS):
+    """Converte as colunas numéricas para float e 'Quantidade de Contribuintes' para inteiro."""
     df = df.copy()
 
     for coluna in df.columns:
@@ -92,22 +121,9 @@ def converter_tipos(df, colunas_ignoradas=COLUNAS_IGNORADAS):
     return df
 
 
-def _para_float(serie):
-    if pd.api.types.is_numeric_dtype(serie):
-        return serie.astype(float)
-
-    serie = (
-        serie.astype(str)
-        .str.strip()
-        .str.replace(".", "", regex=False)
-        .str.replace(",", ".", regex=False) 
-    )
-    return pd.to_numeric(serie, errors="coerce")
-
 dfO = converter_tipos(dfO)
-dfT = dfO[colunas_unicas].copy()
 
-#------------ DATASET COMPACTADO ------------ 
+#------------ DATASET COMPACTADO ------------
 
 grupos_compactados = {
     "Rendimentos Tributáveis Totais [R$ milhões]": [
