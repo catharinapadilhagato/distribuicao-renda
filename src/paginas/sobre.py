@@ -1,13 +1,15 @@
 from src.dados.limpezaDados import dfO, dfT
+from src.util.graficos import corr_dados, hist_dados
 
 from src.util.eda import *
 
 import streamlit as st
+import html
 
 import pandas as pd
 import numpy as np
 
-import html
+import matplotlib.pyplot as plt
 
 st.title("Distribuição de renda de cada estado", text_alignment="center")
 st.markdown(
@@ -136,7 +138,6 @@ def renderizar_analise_dataset(data:pd.DataFrame, prefixo: str):
                      )
 
 
-# Troque `df2` pelo nome da sua segunda variável de DataFrame
 aba1, aba2 = st.tabs(['Conjunto original', 'Conjunto transformado'])
 
 with aba1:
@@ -152,3 +153,38 @@ Para melhor compreensão e facilidade nas analises que serão realizadas, alguma
     ''')
     st.divider()
     renderizar_analise_dataset(dfT, prefixo='dfT')
+    
+    st.divider()
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader('Correlação entre os dados')
+        fig_corr = corr_dados(dfT)
+        st.pyplot(fig_corr)
+        plt.close(fig_corr)
+        st.write('''
+Todos os dados dados, exceto o que representa o ano e a quantidade de contribuentes, possuem uma correlação possitiva. Tendo destaques a Rend. Sujeito à Tribut. que tem uma correlação forte com Rend. Isentos e Bens e Direitos.
+        ''')
+
+    with col2:
+        st.subheader('Frequência e distribuição dos dados')
+        
+        n_colunas, pqn_analise = st.columns(2)
+        with n_colunas:
+            n = st.number_input(
+                    "Escolha a quantidade de colunas a serem exibidas:",
+                    min_value=6,
+                    max_value=max(1, len(dfT.columns)),
+                    value=min(6, max(1, len(dfT))),
+                    step=1,
+                    width=150
+                    )
+
+        with pqn_analise:
+            st.markdown('''
+Percebe-se que os dados vão se distribuindo na diagonal, exibindo a linealidade entre eles.            
+''')
+        
+        fig_hist = hist_dados(dfT, max_colunas=n)
+        st.pyplot(fig_hist)
+        plt.close(fig_hist)
