@@ -15,7 +15,7 @@ logger = configurar_log('limpeza',
 
 #------------ CARREGAMENTO ------------
 
-CAMINHO_DADOS = Path(__file__).resolve().parents[2] / "data" / "distribuicao_renda.csv"
+CAMINHO_DADOS = Path(__file__).parent / "distribuicao_renda.csv"
 
 
 def carregar_dados():
