@@ -28,8 +28,7 @@ URL = "https://dados.gov.br/dados/conjuntos-dados/distribuio-de-renda"
 
 TITULO_RECURSO = "Distribuição da renda tributável, dos sócios, dividendos e tributada exclusivamente na fonte"
 
-# raiz do projeto / data / distribuicao_renda.csv
-CAMINHO_DADOS = Path(__file__).resolve().parents[2] / "data" / "distribuicao_renda.csv"
+CAMINHO_DADOS = Path(__file__).parent / "distribuicao_renda.csv"    
 
 
 def salvar_screenshot(driver, nome="debug"):
