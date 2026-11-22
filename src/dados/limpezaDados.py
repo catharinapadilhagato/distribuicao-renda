@@ -67,9 +67,11 @@ colunas_unicas = [
     "Ente Federativo",
     "Centil",
     "Quantidade de Contribuintes",
+    "Nivel",
+    "Subcentil",
     "Rendimentos Sujeitos à Tribut. Exclusiva [R$ milhões]",
     "Imposto Devido [R$ milhões]",
-    "Dívidas e Ônus [R$ milhões]",
+    "Dívidas e Ônus [R$ milhões]"
 ]
 
 if len(dfO.columns) != len(nome_colunas):
@@ -81,6 +83,38 @@ for antigo, novo in zip(dfO.columns, nome_colunas):
 
 dfO.columns = nome_colunas
 
+#------------ SEPARAÇÃO DO CENTIL ------------
+# O centil 100 é aberto em 10 subgrupos (100.1 ... 100.10).
+# esse trecho apenas separa em duas colunas, uma mantendo o subgrupo e outra juntando eles
+
+def separar_centil(data):
+    data = data.copy()
+    texto = data["Centil"].astype(str).str.strip()
+    partes = texto.str.split(".", n=1, expand=True)
+
+    data["Centil"] = pd.to_numeric(partes[0]).astype(int)
+
+    if partes.shape[1] > 1:
+        data["Subcentil"] = partes[1].fillna("")
+    else:
+        data["Subcentil"] = ""
+
+    # 0 = centil normal, 1 = 100.x, 2 = 100.10.x
+    data["Nivel"] = texto.str.count(r"\.").astype(int)
+
+    colunas = list(data.columns)
+    for c in ("Subcentil", "Nivel"):
+        colunas.remove(c)
+    i = colunas.index("Centil") + 1
+    colunas[i:i] = ["Subcentil", "Nivel"]
+
+    logger.info("coluna 'Centil' separada em 'Centil', 'Subcentil' e 'Nivel'")
+    return data[colunas]
+
+
+dfO = separar_centil(dfO)
+
+
 #------------ MUDANÇA DE TIPO ------------
 
 COLUNAS_IGNORADAS = [
@@ -88,6 +122,8 @@ COLUNAS_IGNORADAS = [
     "Ente Federativo",
     "Centil",
     "Quantidade de Contribuintes",
+    "Nivel",
+    "Subcentil"
 ]
 
 
@@ -104,21 +140,23 @@ def _para_float(serie):
     return pd.to_numeric(serie, errors="coerce")
 
 
-def converter_tipos(df, colunas_ignoradas=COLUNAS_IGNORADAS):
+def converter_tipos(data, colunas_ignoradas=COLUNAS_IGNORADAS):
     """Converte as colunas numéricas para float e 'Quantidade de Contribuintes' para inteiro."""
-    df = df.copy()
+    data = data.copy()
 
-    for coluna in df.columns:
+    for coluna in data.columns:
         if coluna in colunas_ignoradas:
             continue
-        df[coluna] = _para_float(df[coluna])
+        data[coluna] = _para_float(data[coluna])
         logger.info(f"coluna '{coluna}' convertida para float")
 
     qtd = "Quantidade de Contribuintes"
-    df[qtd] = _para_float(df[qtd]).round().astype("Int64")
-    logger.info(f"coluna '{qtd}' convertida para inteiro")
+    c = "Centil"
+    data[qtd] = _para_float(data[qtd]).round().astype("Int64")
+    data[c] = _para_float(data[c]).round().astype("Int64")
+    logger.info(f"coluna '{qtd}' e '{c} convertida para inteiro")
 
-    return df
+    return data
 
 
 dfO = converter_tipos(dfO)
@@ -130,10 +168,7 @@ logger.info(dfO.head())
 
 grupos_compactados = {
     "Rendimentos Tributáveis Totais [R$ milhões]": [
-        "Rendimentos Tributáveis - Limite Superior da RB2 do Centil [R$ milhões]",
-        "Rendimentos Tributáveis - Soma da RB2 do Centil [R$ milhões]",
-        "Rendimentos Tributáveis - RB2 Acumulada do Centil [R$ milhões]",
-        "Rendimentos Tributáveis - Média da RB2 do Centil [R$]",
+        "Rendimentos Tributáveis - Soma da RB2 do Centil [R$ milhões]"
     ],
     "Rendimentos Isentos Totais [R$ milhões]": [
         "Rendimentos Isentos - Lucros e dividendos [R$ milhões]",
@@ -164,12 +199,17 @@ for nome_coluna, colunas in grupos_compactados.items():
 logger.info('Dataset compactado/transformado')
 logger.info(dfT.head())
 
+dfT = dfT[dfT['Ente Federativo'] != 'BRASIL']
+logger.info('Exclusão das linhas que tem o ente federativo do brasil da base de dados')
+
 #------------ DATASET AGRAGADO ------------
 #Por causa do grande volume de dados distribuidos entre os centis, esse dataset agrupa o ano e ente federativo dos itens
 
 dfAgregado = (
-    dfT.groupby(['Ano-calendário', 'Ente Federativo'], as_index=False)
-       .sum(numeric_only=True)
+    dfT[dfT["Nivel"] == 0]
+    .drop(columns=["Centil", "Subcentil", "Nivel"])
+    .groupby(['Ano-calendário', 'Ente Federativo'], as_index=False)
+    .sum(numeric_only=True)
 )
 logger.info('data set agregado criado')
 logger.info(dfAgregado.head())
