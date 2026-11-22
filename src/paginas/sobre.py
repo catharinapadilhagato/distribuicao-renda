@@ -1,7 +1,5 @@
 from src.dados.limpezaDados import dfO, dfT
-from src.util.graficos import corr_dados, hist_dados
-
-from src.util.eda import *
+from src.util.graficos import corr_dados, disp_dados, bar_lateral_dados, bplot_dados
 
 import streamlit as st
 import html
@@ -10,6 +8,27 @@ import pandas as pd
 import numpy as np
 
 import matplotlib.pyplot as plt
+
+COLUNAS_ID = ['Ano-calendário', 'Ente Federativo', 'Centil', 'Subcentil', 'Nivel', 'Quantidade de Contribuintes']
+
+
+def colunas_formatadas(data:pd.DataFrame):
+    return "\n".join(
+    f"- {col.replace('$', r'\$')}" for col in data.columns
+)
+
+def n_valores(data:pd.DataFrame, n:int=5, primeiros:bool=True):
+    '''
+    Função para exibir n valores de um dataset
+
+    data -> Recebe um dataframe;
+    n -> Recebe um número inteiro (por padrão, 5) que indica a quantidade de valores a serem exibidos;
+    primeiros -> Recebe True/False  (por padrão, True), se verdadeiro, retorna os primeiros itens, se falso, os últimos.
+    '''
+    if primeiros:
+        return data.head(n)
+
+    return data.tail(n)
 
 st.title("Distribuição de renda de cada estado", text_alignment="center")
 st.markdown(
@@ -104,7 +123,7 @@ def renderizar_analise_dataset(data:pd.DataFrame, prefixo: str):
 
     st.divider()
     st.subheader('Descrição do conjunto de dados')
-    colunas_irrelevantes = ['Ano-calendário', 'Centil', 'Ente Federativo'] #Colunas que não são relevantes para o describe
+    colunas_irrelevantes = ['Ano-calendário', 'Centil', 'Subcentil', 'Nivel', 'Ente Federativo'] #Colunas que não são relevantes para o describe
     st.dataframe(
     data.drop(columns=colunas_irrelevantes, errors="ignore").describe(include="all"))
 
@@ -156,35 +175,52 @@ Para melhor compreensão e facilidade nas analises que serão realizadas, alguma
     
     st.divider()
 
+    dfN = dfT[dfT["Nivel"] == 0].copy()
+    metricas = [c for c in dfT.columns if c not in COLUNAS_ID]
+
     col1, col2 = st.columns(2)
     with col1:
         st.subheader('Correlação entre os dados')
-        fig_corr = corr_dados(dfT)
+        fig_corr = corr_dados(dfN.drop(columns=['Nivel']))
         st.pyplot(fig_corr)
         plt.close(fig_corr)
         st.write('''
-Todos os dados dados, exceto o que representa o ano e a quantidade de contribuentes, possuem uma correlação possitiva. Tendo destaques a Rend. Sujeito à Tribut. que tem uma correlação forte com Rend. Isentos e Bens e Direitos.
+Todos os dados, exceto o que representa o ano e a quantidade de contribuintes, possuem uma correlação positiva. Têm destaque Rend. Sujeitos à Tribut., que tem uma correlação forte com Rend. Isentos e Bens e Direitos.
         ''')
+
+        st.subheader('Comparação entre os entes federativos')
+        opcao_bar = st.selectbox('Selecione um parâmetro', metricas, key='sel_bar_lateral')
+        fig_bar_lat, top5 = bar_lateral_dados(dfN, eixo_x=opcao_bar, eixo_y='Ente Federativo')
+        st.pyplot(fig_bar_lat)
+        plt.close(fig_bar_lat)
+        st.markdown(f"""Os principais Entes Federativos relacionados ao **{opcao_bar}**:
+
+{top5}""")
 
     with col2:
         st.subheader('Frequência e distribuição dos dados')
-        
+
         n_colunas, pqn_analise = st.columns(2)
         with n_colunas:
             n = st.number_input(
                     "Escolha a quantidade de colunas a serem exibidas:",
                     min_value=6,
                     max_value=max(1, len(dfT.columns)),
-                    value=min(6, max(1, len(dfT))),
+                    value=min(6, max(1, len(dfT.columns))),
                     step=1,
-                    width=150
+                    key='num_colunas_disp',
+                    width=550
                     )
 
         with pqn_analise:
-            st.markdown('''
-Percebe-se que os dados vão se distribuindo na diagonal, exibindo a linealidade entre eles.            
-''')
-        
-        fig_hist = hist_dados(dfT, max_colunas=n)
-        st.pyplot(fig_hist)
-        plt.close(fig_hist)
+            st.markdown('Percebe-se que os dados vão se distribuindo na diagonal, exibindo a linealidade entre eles.')
+
+        fig_disp = disp_dados(dfN, max_colunas=n)
+        st.pyplot(fig_disp)
+        plt.close(fig_disp)
+
+        st.subheader('Distribuição dos centis')
+        opcao_bp = st.selectbox('Selecione um parâmetro', metricas, key='sel_boxplot')
+        fig_bp = bplot_dados(dfN, eixo_x='Centil', eixo_y=opcao_bp)
+        st.pyplot(fig_bp)
+        plt.close(fig_bp)
