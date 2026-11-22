@@ -23,7 +23,7 @@ def corr_dados(data:pd.DataFrame):
                 cmap="coolwarm",
                 linewidths=0.5,
                 cbar_kws={"shrink": 1},
-                annot_kws={"size": 6},
+                annot_kws={"size": 10},
                 vmin=-1,
                 vmax=1)
 
@@ -47,7 +47,7 @@ def _quebrar_texto(texto: str, largura: int = 18) -> str:
     return "\n".join(linhas)
 
 
-def hist_dados(data: pd.DataFrame, max_colunas: int = 6):
+def disp_dados(data: pd.DataFrame, max_colunas: int = 6):
     """Recebe um DataFrame e retorna um PairGrid bem espaçado das colunas numéricas."""
     data_filtrado = (
         data.select_dtypes(include="number")
@@ -101,3 +101,92 @@ def hist_dados(data: pd.DataFrame, max_colunas: int = 6):
     )
 
     return grid.fig
+
+def bar_lateral_dados(
+    data: pd.DataFrame,
+    eixo_x = None,
+    eixo_y = None):
+    
+    """Retorna um gráfico de barras horizontal usando Seaborn e Matplotlib.
+        data: DataFrame contendo os dados para plotagem.
+        eixo_x: Nome da coluna para o eixo X (normalmente valores numéricos).
+        eixo_y: Nome da coluna para o eixo Y (normalmente categorias).
+    """
+
+    data_plot = (
+        data.groupby(eixo_y, observed=False)[eixo_x]
+        .sum()
+        .dropna()
+        .sort_values(ascending=False)
+        .reset_index()
+    )
+
+    top5 = (
+        data.groupby(eixo_y, observed=False)[eixo_x]
+        .sum()
+        .dropna()
+        .sort_values(ascending=False)
+        .head(5)
+    )
+
+    lista_top5 = "\n".join(
+    f"{i}. **{ente}**: {valor:,.2f}"
+    for i, (ente, valor) in enumerate(top5.items(), start=1)
+    )
+
+    fig, ax = plt.subplots(figsize=(10, 8))
+
+    ax = sns.barplot(data=data_plot,
+                x=eixo_x,
+                y=eixo_y,
+                orient="h",
+                errorbar=None)
+
+    ax.bar_label(ax.containers[0], fontsize=10)
+    plt.xticks(rotation=45, ha="right")
+    plt.tight_layout()
+
+    return fig, lista_top5
+
+import numpy as np
+
+def bplot_dados(data: pd.DataFrame, eixo_x=None, eixo_y=None, agrupar_centis=True, log=True):
+    '''Recebe um DataFrame e retorna um boxplot.
+
+    Se eixo_x == 'Centil' e agrupar_centis=True, os 100 centis são agrupados em 10 faixas (decis).
+    log=True usa escala logarítmica no eixo Y (valores <= 0 são descartados).
+    '''
+    data = data.copy()
+
+    if eixo_x == 'Centil' and agrupar_centis:
+        faixas = list(range(0, 101, 10))
+        rotulos = [f"{a + 1}–{b}" for a, b in zip(faixas[:-1], faixas[1:])]
+        data['Faixa de centil'] = pd.cut(data['Centil'], bins=faixas, labels=rotulos)
+        eixo_x = 'Faixa de centil'
+
+    if log:
+        data = data[data[eixo_y] > 0]
+
+    fig, ax = plt.subplots(figsize=(10, 8))
+
+    sns.boxplot(
+        data=data,
+        x=eixo_x,
+        y=eixo_y,
+        ax=ax,
+        linewidth=1,
+        width=0.6,
+        fliersize=2,
+        flierprops={"alpha": 0.35},
+    )
+
+    if log:
+        ax.set_yscale("log")
+        ax.set_ylabel(f"{eixo_y} (escala log)")
+
+    ax.grid(axis="y", alpha=0.3)
+    ax.tick_params(axis="x", rotation=45, labelsize=9)
+    plt.setp(ax.get_xticklabels(), ha="right")
+    fig.tight_layout()
+
+    return fig
