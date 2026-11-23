@@ -4,10 +4,8 @@ from src.util.eda import renderizar_eda
 from src.util.tema import cartao
 
 import streamlit as st
-import html
 
 import pandas as pd
-import numpy as np
 
 import matplotlib.pyplot as plt
 
