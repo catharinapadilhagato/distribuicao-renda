@@ -105,7 +105,7 @@ with aba2:
         st.markdown('''
 Para melhor compreensão e facilidade nas analises que serão realizadas, algumas colunas foram compactadas, sendo elas:
 - Rendimentos Tributáveis Totais [R$ milhões];
-- Rendimentos Isentos Totais [R$ milhões];
+- Rendimentos Isentos Totais [R$ milhões] (excluindo os outros rendimentos);
 - Despesas Dedutíveis Totais [R$ milhões];
 - Bens e Direitos Totais [R$ milhões];
 - Filtrando o nível por 0;

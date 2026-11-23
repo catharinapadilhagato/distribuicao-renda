@@ -71,7 +71,8 @@ colunas_unicas = [
     "Subcentil",
     "Rendimentos Sujeitos à Tribut. Exclusiva [R$ milhões]",
     "Imposto Devido [R$ milhões]",
-    "Dívidas e Ônus [R$ milhões]"
+    "Dívidas e Ônus [R$ milhões]",
+    "Rendimentos Isentos - Outros Rendimentos Isentos [R$ milhões]"
 ]
 
 if len(dfO.columns) != len(nome_colunas):
@@ -172,8 +173,7 @@ grupos_compactados = {
     ],
     "Rendimentos Isentos Totais [R$ milhões]": [
         "Rendimentos Isentos - Lucros e dividendos [R$ milhões]",
-        "Rendimentos Isentos - Rendim. Sócio/Titular ME/EPP Opt SIMPLES [R$ milhões]",
-        "Rendimentos Isentos - Outros Rendimentos Isentos [R$ milhões]",
+        "Rendimentos Isentos - Rendim. Sócio/Titular ME/EPP Opt SIMPLES [R$ milhões]"
     ],
     "Despesas Dedutíveis Totais [R$ milhões]": [
         "Despesas Dedutíveis - Previdência [R$ milhões]",
@@ -210,9 +210,45 @@ logger.info('Exclusão das linhas que tem o ente federativo do brasil da base de
 
 dfAgregado = (
     dfT
-    .drop(columns=["Centil"])
+    .drop(columns=["Centil", "Rendimentos Isentos Totais [R$ milhões]", "Rendimentos Sujeitos à Tribut. Exclusiva [R$ milhões]"])
     .groupby(['Ano-calendário', 'Ente Federativo'], as_index=False)
     .sum(numeric_only=True)
 )
 logger.info('data set agregado criado')
 logger.info(dfAgregado.head())
+
+dfAgregado = dfAgregado.rename(columns={
+    "Rendimentos Tributáveis Totais [R$ milhões]": "Renda Total [R$ milhões]"
+})
+logger.info('Mudança do nome da coluna Rendimentos tributáveis totais por Renda Total')
+
+#------------ DEFASAGEM (LAG) ------------
+# Para prever o ano seguinte, só podemos usar informações já conhecidas: os valores do ano anterior.
+
+ALVO = "Renda Total [R$ milhões]"
+
+COLUNAS_LAG = [
+    ALVO,
+    "Quantidade de Contribuintes",
+    "Rendimentos Isentos - Outros Rendimentos Isentos [R$ milhões]",
+    "Imposto Devido [R$ milhões]",
+    "Despesas Dedutíveis Totais [R$ milhões]",
+    "Bens e Direitos Totais [R$ milhões]",
+    "Dívidas e Ônus [R$ milhões]",
+]
+
+dfAgregado = dfAgregado.sort_values(["Ente Federativo", "Ano-calendário"]).reset_index(drop=True)
+
+grupo = dfAgregado.groupby("Ente Federativo")
+ano_anterior_ok = grupo["Ano-calendário"].diff() == 1 #Verifica se é realmente o ano anterior
+
+colunas_lag_criadas = []
+for coluna in COLUNAS_LAG:
+    nome_lag = coluna.replace(" [R$ milhões]", "") + " (ano anterior)"
+    dfAgregado[nome_lag] = grupo[coluna].shift(1).astype(float).where(ano_anterior_ok)
+    colunas_lag_criadas.append(nome_lag)
+    logger.info(f"Criada a coluna '{nome_lag}'")
+
+dfAgregado = dfAgregado.drop(columns=[c for c in COLUNAS_LAG if c != ALVO])
+dfAgregado = dfAgregado.dropna(subset=colunas_lag_criadas)
+logger.info("Removidas as variáveis do mesmo ano e as linhas sem ano anterior")
