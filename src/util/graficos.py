@@ -1,12 +1,7 @@
-from src.util.funcaoLog import configurar_log
-
 import pandas as pd
 
 import seaborn as sns
 import matplotlib.pyplot as plt
-
-from pathlib import Path
-
 #------------ COR PRO GRÁFICO ------------ 
 COR_VERMELHO = "#E52207"
 COR_AMARELO = "#FFCD07"
