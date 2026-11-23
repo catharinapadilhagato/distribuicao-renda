@@ -1,8 +1,12 @@
+from pathlib import Path
+
 import streamlit as st
 
 from src.util.tema import aplicar_tema
 
-st.set_page_config(layout="wide")
+ICONE_PAGINA = Path(__file__).parent / "assets" / "brasao.png"
+
+st.set_page_config(layout="wide", page_icon=str(ICONE_PAGINA))
 
 sobre_page = st.Page("src/paginas/sobre.py", title="Sobre")
 predito_page = st.Page("src/paginas/predito.py", title="Predito")
