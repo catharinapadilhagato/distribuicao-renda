@@ -199,15 +199,18 @@ for nome_coluna, colunas in grupos_compactados.items():
 logger.info('Dataset compactado/transformado')
 logger.info(dfT.head())
 
-dfT = dfT[dfT['Ente Federativo'] != 'BRASIL']
+dfT = (
+    dfT[(dfT['Ente Federativo'] != 'BRASIL') & (dfT["Nivel"] == 0)]
+        .drop(columns=["Subcentil", "Nivel"])
+)
 logger.info('Exclusão das linhas que tem o ente federativo do brasil da base de dados')
 
 #------------ DATASET AGRAGADO ------------
 #Por causa do grande volume de dados distribuidos entre os centis, esse dataset agrupa o ano e ente federativo dos itens
 
 dfAgregado = (
-    dfT[dfT["Nivel"] == 0]
-    .drop(columns=["Centil", "Subcentil", "Nivel"])
+    dfT
+    .drop(columns=["Centil"])
     .groupby(['Ano-calendário', 'Ente Federativo'], as_index=False)
     .sum(numeric_only=True)
 )
