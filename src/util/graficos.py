@@ -7,6 +7,20 @@ import matplotlib.pyplot as plt
 
 from pathlib import Path
 
+#------------ COR PRO GRÁFICO ------------ 
+COR_VERMELHO = "#E52207"
+COR_AMARELO = "#FFCD07"
+COR_VERDE = "#168821"
+COR_VERDE_ESCURO = "#0C4A2F"
+COR_AZUL = "#1351B4"
+
+
+def _pintar_ranking(ax):
+    """Pinta as barras: 1º vermelho, 2º amarelo, 3º verde, 4º e 5º verde escuro, demais azul."""
+    cores_top = [COR_VERMELHO, COR_AMARELO, COR_VERDE, COR_VERDE_ESCURO, COR_VERDE_ESCURO]
+    for i, barra in enumerate(ax.containers[0].patches):
+        barra.set_facecolor(cores_top[i] if i < len(cores_top) else COR_AZUL)
+
 #------------ GRÁFICOS ------------ 
 def corr_dados(data:pd.DataFrame):
     '''
@@ -134,6 +148,7 @@ def bar_lateral_dados(
     for i, (ente, valor) in enumerate(top5.items(), start=1)
     )
 
+    sns.set_style("white")    
     fig, ax = plt.subplots(figsize=(10, 8))
 
     ax = sns.barplot(data=data_plot,
@@ -142,13 +157,13 @@ def bar_lateral_dados(
                 orient="h",
                 errorbar=None)
 
+    sns.despine(ax=ax)
     ax.bar_label(ax.containers[0], fontsize=10)
+    _pintar_ranking(ax)
     plt.xticks(rotation=45, ha="right")
     plt.tight_layout()
 
     return fig, lista_top5
-
-import numpy as np
 
 def bplot_dados(data: pd.DataFrame, eixo_x=None, eixo_y=None, agrupar_centis=True, log=True):
     '''Recebe um DataFrame e retorna um boxplot.
@@ -178,6 +193,7 @@ def bplot_dados(data: pd.DataFrame, eixo_x=None, eixo_y=None, agrupar_centis=Tru
         width=0.6,
         fliersize=2,
         flierprops={"alpha": 0.35},
+        color=COR_AZUL
     )
 
     if log:
@@ -190,3 +206,55 @@ def bplot_dados(data: pd.DataFrame, eixo_x=None, eixo_y=None, agrupar_centis=Tru
     fig.tight_layout()
 
     return fig
+
+def bar_dados_lista(data: pd.DataFrame, colunas: list[str], coluna_nome: str):
+
+    data_longo = data.melt(
+        value_vars=colunas,
+        var_name=coluna_nome,
+        value_name="Valor [R$ milhões]",
+    )
+
+    data_longo[coluna_nome] = (
+        data_longo[coluna_nome]
+        .str.replace(coluna_nome + " - ", "", regex=False)
+        .str.replace(" [R$ milhões]", "", regex=False)
+    )
+
+    soma_agrupada = (
+        data_longo.groupby(coluna_nome, observed=False)["Valor [R$ milhões]"]
+        .sum()
+        .dropna()
+        .sort_values(ascending=False)
+    )
+
+    ordem = soma_agrupada.index
+
+    top5 = soma_agrupada.head(5)
+
+    lista_top5 = "\n".join(
+        f"{i}. **{ente}**: {valor:,.2f}"
+        for i, (ente, valor) in enumerate(top5.items(), start=1)
+    )
+
+    sns.set_style("white")
+    fig, ax = plt.subplots(figsize=(10, 8))
+
+    sns.barplot(
+        data=data_longo,
+        x="Valor [R$ milhões]",
+        y=coluna_nome,
+        order=ordem,
+        estimator="sum",
+        errorbar=None,
+        ax=ax,
+    )
+
+    _pintar_ranking(ax)
+    sns.despine(ax=ax)
+    ax.bar_label(ax.containers[0], fontsize=10)
+    ax.tick_params(axis="x", rotation=45, labelsize=9)
+    plt.setp(ax.get_xticklabels(), ha="right")
+    fig.tight_layout()
+
+    return fig, lista_top5

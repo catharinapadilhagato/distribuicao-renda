@@ -1,5 +1,5 @@
 from src.dados.limpezaDados import dfO, dfT
-from src.util.graficos import corr_dados, disp_dados, bar_lateral_dados,  bplot_dados
+from src.util.graficos import corr_dados, disp_dados, bar_lateral_dados,  bplot_dados, bar_dados_lista
 from src.util.eda import renderizar_eda
 from src.util.tema import cartao
 
@@ -22,8 +22,8 @@ def colunas_formatadas(data:pd.DataFrame):
 with cartao("sobre_titulo"):
     st.title("Distribuição de renda de cada estado", text_alignment="center")
     st.markdown(
-        "O trabalho tem como objetivo analisar a distribuição de renda de cada estado, "
-        "e predizer em R$ a quantidade de imposto de renda total que o estado terá em um determinado ano.",
+        """O trabalho tem como objetivo analisar a distribuição de renda de cada estado,
+        e predizer em R$ a quantidade de rendimento total que um estado terá em um determinado ano.""",
         text_alignment="center",
     )
 
@@ -39,13 +39,68 @@ O site fornece 3 conjuntos de dados:
 
 Cada um tem a própria documentação que explica o que cada atributo significa; o conjunto escolhido foi o terceiro, por ser mais completo.
 
-No conjunto, a coluna "Centil" tem subgrupos apartir do 100° centil, que devide em 100.01 - 100.10 os mais ricos e 100.10.01 - 100.10.10. Para facilitar a compreensão dessa coluna, foram criadas duas novas, a "Subcentil" que recebe o subgrupo e "Nivel" que filtra qual tipo de centil vai aparecer (o que está no subgrupo ou o número inteiro daquele centil)
+O conjunto considera apenas as pessoas que contribuem com a declaração imposto de renda, ou seja, não há informações sobre os não contribuintes. 
+
+No conjunto, a coluna "Centil" tem subgrupos apartir do 100° centil, que devide em 100.01 - 100.10 os mais ricos e 100.10.01 - 100.10.10. 
+Para facilitar a compreensão dessa coluna, foram criadas duas novas, a "Subcentil" que recebe o subgrupo e "Nivel" que filtra qual tipo de centil vai aparecer 
+(o que está no subgrupo ou o número inteiro daquele centil)
 """)
 
 aba1, aba2 = st.tabs(['Conjunto original', 'Conjunto transformado'])
 
 with aba1:
     renderizar_eda(dfO, prefixo='dfO')
+    col1, col2 = st.columns(2)
+    with col1:
+        with cartao("despesas_dedutiveis"):
+            st.subheader("Comparação entre as depesas dedutíveis")
+            fig_despbar,top_desp = bar_dados_lista(dfO,
+                                        colunas = [
+                                                "Despesas Dedutíveis - Previdência [R$ milhões]",
+                                                "Despesas Dedutíveis - Dependentes [R$ milhões]",
+                                                "Despesas Dedutíveis - Instrução [R$ milhões]",
+                                                "Despesas Dedutíveis - Médicas [R$ milhões]",
+                                                "Despesas Dedutíveis - Pensão Alimentícia [R$ milhões]",
+                                                "Despesas Dedutíveis - Livro-Caixa [R$ milhões]"],
+                                        coluna_nome = "Despesas Dedutíveis "
+                                        )
+            st.pyplot(fig_despbar)
+            plt.close(fig_despbar)
+            st.markdown(f"""Os principais Entes Federativos relacionados às **Despesas Dedutíveis**:
+            
+{top_desp}""")
+
+        with cartao("bens_direitos"):
+            st.subheader("Comparação entre os bens e direitos")
+            fig_bens, top_bens = bar_dados_lista(dfO,
+                                        colunas=[
+                                        "Bens e Direitos - Outros Bens e Direitos [R$ milhões]",
+                                        "Bens e Direitos - Financeiros [R$ milhões]",
+                                        "Bens e Direitos - Móveis [R$ milhões]",
+                                        "Bens e Direitos - Imóveis [R$ milhões]"],
+                                        coluna_nome="Bens e Direitos",
+                                        )
+            st.pyplot(fig_bens)
+            plt.close(fig_bens)
+            st.markdown(f"""Os principais Entes Federativos relacionados aos **Bens e Direitos**:
+
+{top_bens}""")
+
+    with col2:
+        with cartao("rendimentos"):
+            st.subheader("Comparação entre os rendimentos")
+            fig_rend, top_rend = bar_dados_lista(dfO,
+                                            colunas=[
+                                            "Rendimentos Isentos - Outros Rendimentos Isentos [R$ milhões]",
+                                            "Rendimentos Isentos - Rendim. Sócio/Titular ME/EPP Opt SIMPLES [R$ milhões]",
+                                            "Rendimentos Isentos - Lucros e dividendos [R$ milhões]"],
+                                            coluna_nome="Rendimentos Isentos",
+                                            )
+            st.pyplot(fig_rend)
+            plt.close(fig_rend)
+            st.markdown(f"""Os principais Entes Federativos relacionados aos **Rendimentos Isentos**:
+                        
+{top_rend}""")
 
 with aba2:
     with cartao("sobre_compactadas"):
@@ -54,7 +109,10 @@ Para melhor compreensão e facilidade nas analises que serão realizadas, alguma
 - Rendimentos Tributáveis Totais [R$ milhões];
 - Rendimentos Isentos Totais [R$ milhões];
 - Despesas Dedutíveis Totais [R$ milhões];
-- Bens e Direitos Totais [R$ milhões].
+- Bens e Direitos Totais [R$ milhões];
+- Filtrando o nível por 0;
+- Retirando os atributos "Centil", "Subcentil" e "Nivel";
+- Retirada as características que o ente federativo era referente ao "BRASIL";
         ''')
 
     renderizar_eda(dfT, prefixo='dfT')
@@ -69,7 +127,8 @@ Para melhor compreensão e facilidade nas analises que serão realizadas, alguma
             st.pyplot(fig_corr)
             plt.close(fig_corr)
             st.write('''
-Todos os dados, exceto o que representa o ano e a quantidade de contribuintes, possuem uma correlação positiva. Têm destaque Rend. Sujeitos à Tribut., que tem uma correlação forte com Rend. Isentos e Bens e Direitos.
+Todos os dados, exceto o que representa o ano e a quantidade de contribuintes, possuem uma correlação positiva. Têm destaque Rend. Sujeitos à Tribut., 
+que tem uma correlação forte com Rend. Isentos e Bens e Direitos.
             ''')
 
         with cartao("sobre_comparacao"):
