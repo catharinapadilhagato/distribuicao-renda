@@ -59,14 +59,13 @@ Para melhor compreensão e facilidade nas analises que serão realizadas, alguma
 
     renderizar_eda(dfT, prefixo='dfT')
 
-    dfN = dfT[dfT["Nivel"] == 0].copy()
     metricas = [c for c in dfT.columns if c not in COLUNAS_ID]
 
     col1, col2 = st.columns(2)
     with col1:
         with cartao("sobre_correlacao"):
             st.subheader('Correlação entre os dados')
-            fig_corr = corr_dados(dfN.drop(columns=['Nivel']))
+            fig_corr = corr_dados(dfT)
             st.pyplot(fig_corr)
             plt.close(fig_corr)
             st.write('''
@@ -76,7 +75,7 @@ Todos os dados, exceto o que representa o ano e a quantidade de contribuintes, p
         with cartao("sobre_comparacao"):
             st.subheader('Comparação entre os entes federativos')
             opcao_bar = st.selectbox('Selecione um parâmetro', metricas, key='sel_bar_lateral')
-            fig_bar_lat, top5 = bar_lateral_dados(dfN, eixo_x=opcao_bar, eixo_y='Ente Federativo')
+            fig_bar_lat, top5 = bar_lateral_dados(dfT, eixo_x=opcao_bar, eixo_y='Ente Federativo')
             st.pyplot(fig_bar_lat)
             plt.close(fig_bar_lat)
             st.markdown(f"""Os principais Entes Federativos relacionados ao **{opcao_bar}**:
@@ -102,13 +101,13 @@ Todos os dados, exceto o que representa o ano e a quantidade de contribuintes, p
             with pqn_analise:
                 st.markdown('Percebe-se que os dados vão se distribuindo na diagonal, exibindo a linealidade entre eles.')
 
-            fig_disp = disp_dados(dfN, max_colunas=n)
+            fig_disp = disp_dados(dfT, max_colunas=n)
             st.pyplot(fig_disp)
             plt.close(fig_disp)
 
         with cartao("sobre_centis"):
             st.subheader('Distribuição dos centis')
             opcao_bp = st.selectbox('Selecione um parâmetro', metricas, key='sel_boxplot')
-            fig_bp = bplot_dados(dfN, eixo_x='Centil', eixo_y=opcao_bp)
+            fig_bp = bplot_dados(dfT, eixo_x='Centil', eixo_y=opcao_bp)
             st.pyplot(fig_bp)
             plt.close(fig_bp)
