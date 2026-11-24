@@ -1,8 +1,14 @@
+selenium
+
 pandas
 numpy
 python-bcb
+statsmodels
 
 streamlit
 
 seaborn
 matplotlib
+
+scikit-learn
+arch

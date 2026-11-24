@@ -27,8 +27,10 @@ with cartao("sobre_titulo"):
 
 with cartao("sobre_dados"):
     st.subheader("Sobre os dados")
-    st.markdown("""
+    st.markdown(f"""
 Os dados foram obtidos através do portal de dados abertos: <https://dados.gov.br/dados/conjuntos-dados/distribuio-de-renda>.
+
+Os dados são de {dfO.iloc[0,0]} à {dfO.iloc[-1, 0]}.
 
 O site fornece 3 conjuntos de dados:
 - Distribuição da renda tributável;

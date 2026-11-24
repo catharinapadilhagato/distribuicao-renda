@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.util.funcaoLog import configurar_log
+from src.util.demais_funcoes import configurar_log
 
 #------------ LOGS ------------
 
@@ -252,3 +252,5 @@ for coluna in COLUNAS_LAG:
 dfAgregado = dfAgregado.drop(columns=[c for c in COLUNAS_LAG if c != ALVO])
 dfAgregado = dfAgregado.dropna(subset=colunas_lag_criadas)
 logger.info("Removidas as variáveis do mesmo ano e as linhas sem ano anterior")
+
+dfAgregado['Ente Federativo'] = dfAgregado['Ente Federativo'].astype('category')

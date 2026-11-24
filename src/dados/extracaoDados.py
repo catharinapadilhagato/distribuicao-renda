@@ -11,7 +11,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from src.util.funcaoLog import configurar_log
+from src.util.demais_funcoes import configurar_log
 
 #------------ LOGS ------------
 
