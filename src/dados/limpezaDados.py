@@ -151,11 +151,9 @@ def converter_tipos(data, colunas_ignoradas=COLUNAS_IGNORADAS):
         data[coluna] = _para_float(data[coluna])
         logger.info(f"coluna '{coluna}' convertida para float")
 
-    qtd = "Quantidade de Contribuintes"
     c = "Centil"
-    data[qtd] = _para_float(data[qtd]).round().astype("Int64")
     data[c] = _para_float(data[c]).round().astype("Int64")
-    logger.info(f"coluna '{qtd}' e '{c} convertida para inteiro")
+    logger.info(f"coluna '{c} convertida para inteiro")
 
     return data
 

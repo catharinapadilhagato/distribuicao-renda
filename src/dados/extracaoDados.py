@@ -124,7 +124,8 @@ def baixar_csv(driver, url_download):
         logger.error(f"Erro ao capturar dados. Status: {resposta.status_code}")
         return None
 
-    df = pd.read_csv(io.BytesIO(resposta.content), sep=";", encoding="utf-8-sig")
+    df = pd.read_csv(io.BytesIO(resposta.content), sep=";", encoding="utf-8-sig",
+                     thousands=".", decimal=",")
     logger.info(f"Dados carregados: {df.shape[0]} linhas, {df.shape[1]} colunas")
     logger.info("\n" + df.head().to_string())
     return df
