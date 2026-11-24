@@ -53,7 +53,6 @@ with cartao("cenarios"):
     ''')
     resultado_cenarios = teste_cenarios(dfAgregado)
     st.dataframe(resultado_cenarios)
-    print(resultado_cenarios)
     st.markdown(f'''
 O cenário que mostrou o menor erro  médio porcentual absoluto foi o cenário E, que considera todas as colunas + ano + estado, 
 com {(resultado_cenarios.iloc[0, 1])*100:.2f}% de erro médio. O cenário mostra que para Regressão Linear Múltipla ele é ideal, porém, olhando apenas para o MAE, o cenário A apresenta
